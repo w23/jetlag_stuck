@@ -1,0 +1,12 @@
+video:
+  config_file: video.yaml
+audio:
+  samplerate: 44100
+  channels: 2
+  bpm: 180
+  rows_per_beat: 4
+  raw_file: audio.raw
+export:
+  shader_path: shaders/
+  shader_suffix: .glsl
+
