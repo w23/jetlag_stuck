@@ -1,1 +1,0 @@
-stameska.exe project.yaml
