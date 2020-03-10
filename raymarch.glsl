@@ -138,7 +138,7 @@ void main() {
 				lS = 1.; // fov-ish
 	//vec3 sz = vec3(3.5,2.,3.);
 	float or = 8.;
-	mat3 mv = mat3(1,0,0,0,1,0,0,0,1);
+	//mat3 mv = mat3(1,0,0,0,1,0,0,0,1);
 	//mv = RY(0.);
 	//mv = RY(2.*sin(t*.01))*RY(3.*sin(t*.039));
 
@@ -146,11 +146,14 @@ void main() {
 
 	// PATHTRACER STARTS
 	lS *= lf;
-	float NS = 32.;
+	float NS = 64.;
 	//float T = t;
 	sundir = normalize(sundir + vec3(0.,.5*sin(t/4.),0.));
 	for (float s=0.;s<NS;++s) {
-		float tt = t - s/NS/60.; // FIXME merge-with-previous-frame blur
+
+		/*
+		//float tt = t - s/NS/60.; // FIXME merge-with-previous-frame blur
+		float tt = 221.;
 		mv = RX(.2+.6*cos(tt*.037))*RY(2.+2.*sin(tt*.05));
 		float a = hash1(seed+=uv.y)*2.*PI,
 					r = s/NS;//*hash1(seed+=uv.y);
@@ -159,6 +162,35 @@ void main() {
 		D = normalize(at - O) * mv; O *= mv;
 		//O.z = 1.;
 		O += vec3(5., 0., 0.);
+		*/
+
+		float tt = t;
+
+		vec3 ca = vec3(0., 0., 0.);
+		vec3 cp = vec3(0., 0., 5.);
+
+		float yu = 0.;
+		float dof = .4;
+		float fov = 1. + 1. * fract(t/32.); cp.z += 4. * fract(t/32.);
+		float lfoc = length(ca-cp);
+		//lfoc = 1. + 24. * fract(t / 64.);
+
+	float a = hash1(seed+=uv.x)*6.2831;
+	O = normalize(ca-cp);
+	D = normalize(cross(O, vec3(.3*yu,1.,0.)));
+	vec3 up = normalize(cross(D, O));
+	mat3 mv = mat3(D, up, -O);
+
+	// TODO dolly zoom
+
+	// TODO AA
+	vec2 uvaa = vec2(0.);
+
+	// TODO different aprerture forms
+	O = vec3(vec2(cos(a),sin(a))*sqrt(hash1(seed+=uv.y))*dof,0.);
+	D = mv*normalize(vec3((uv + uvaa) / fov, -1.)*lfoc - O);
+	O = mv*O + cp;
+
 		vec3 kc = vec3(1.);
 		float ins = 1.;
 		float hue = hash1(seed += P.x);
@@ -170,7 +202,7 @@ void main() {
 			vec3 me = vec3(0.), ma = vec3(0.);
 			float mr = 0.;
 			vec2 mf = vec2(1., 1.);
-			l = 30.;
+			l = 99.;
 			M = 0;
 
 			if (D.y < 0.) {
@@ -181,6 +213,20 @@ void main() {
 				M = 1;
 			}
 
+			// TODO buildup:
+			// 1. sphere on a plane, no lighting, just color, no AAA ("fake" raymarching artifacts)
+			// 2. length-based color
+			// 3. normal
+			// 4. simple lambert lighting
+			// 5. ?????
+			// 6. path trace for i in 1..N bounce w simple light source (sky? ball?), materials are very simple
+			// 7. wet floor material
+			// 8. ????? show more materials?
+			// 9. first greeting
+			// 10. materials caleidoscope and greetings
+
+			// TODO add small sphere as light source
+			// TODO transparency texture pattern
 			xsph(vec3(0.,0.,0.), 4., 2, ins);
 
 			float lp = -O.z / D.z;
