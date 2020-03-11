@@ -166,8 +166,8 @@ void main() {
 
 		float tt = t;
 
-		vec3 ca = vec3(0., 0., 0.);
-		vec3 cp = vec3(0., 0., 5.);
+		vec3 ca = vec3(0., -1., 0.);
+		vec3 cp = vec3(0., 1.9, 5.);
 
 		float yu = 0.;
 		float dof = .4;
@@ -198,6 +198,11 @@ void main() {
 		float mskymat = mod(floor(tt/8.),4.);
 		float mballmat = mod(floor(tt/4.),4.);
 		float mfloormat = mod(floor(tt/6.),3.);
+
+		mskymat = 1.;
+		mballmat = 0.;
+		mfloormat = 3.;
+
 		for (int i = 0; i < 6; ++i) {
 			vec3 me = vec3(0.), ma = vec3(0.);
 			float mr = 0.;
@@ -229,10 +234,11 @@ void main() {
 			// TODO transparency texture pattern
 			xsph(vec3(0.,0.,0.), 4., 2, ins);
 
+			// glyph plane
 			float lp = -O.z / D.z;
 			if (lp > 0. && lp < l) {
 				vec3 p = O + D * lp;
-				if (mask(p.xy*8.)) {
+				if (mask(p.xy*8.+vec2(0.,3.))) {
 					P = p;
 					l = lp;
 					N = E.xxz;
@@ -329,6 +335,11 @@ void main() {
 						+ .125 * noise2(UV * 3.9)
 						+ .0625 * noise2(UV * 9.);
 					mr = .01 + .2 * smoothstep(.4, .5, ns);
+				} else if (mfloormat == 3.) {
+					// https://circularlimited.bandcamp.com/track/disruption
+					ma = vec3(1.);
+					mr = .3;
+					me = vec3(step(abs(P.z + 2. * floor(mod(t, 8.)) - 8.), 1.));
 				}
 			}
 
