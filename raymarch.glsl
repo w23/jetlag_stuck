@@ -1,8 +1,19 @@
+#version 140
 uniform vec2 R;
 uniform float t;
 
 const float PI=3.1415923;
 const vec3 E=vec3(0.,.01,1.);
+
+// Is not random enough
+/* uint rand_seed = 1u; */
+/* float rand() { */
+/* 	rand_seed = rand_seed * 1103515245u + 12345u; */
+/* 	//rand_seed = (rand_seed * 1664525u + 1013904223u); */
+/* 	//return float(rand_seed&0xffffu) / float(0xffffu); */
+/* 	//return float(rand_seed>>16) / float(0xffffu); */
+/* 	return float(rand_seed) / float(0xffffffffu); */
+/* } */
 
 float hash1(float f){return fract(sin(f)*46347.423874);}
 float hash2(vec2 v){return hash1(dot(v,vec2(79.53248,31.4328)));}
@@ -15,9 +26,9 @@ float noise2(vec2 v) {
 		mix(hash2(V+E.xz), hash2(V+E.zz), v.x), v.y);
 }
 
-mat3 RX(float a){float c=cos(a),s=sin(a);return mat3(1.,0.,0.,0.,c,s,0.,-s,c);}
-mat3 RY(float a){float c=cos(a),s=sin(a);return mat3(c,0.,s,0.,1.,0.,-s,0.,c);}
-mat3 RZ(float a){float c=cos(a),s=sin(a);return mat3(c,s,0.,-s,c,0.,0.,0.,1.);}
+/* mat3 RX(float a){float c=cos(a),s=sin(a);return mat3(1.,0.,0.,0.,c,s,0.,-s,c);} */
+/* mat3 RY(float a){float c=cos(a),s=sin(a);return mat3(c,0.,s,0.,1.,0.,-s,0.,c);} */
+/* mat3 RZ(float a){float c=cos(a),s=sin(a);return mat3(c,s,0.,-s,c,0.,0.,0.,1.);} */
 
 vec3 O, D, P, N;
 vec2 UV;
@@ -43,12 +54,15 @@ void xsph(vec3 sc, float sr2, int mi, float ss) {
 	}
 }
 
+// FIXME: replace by simpler wavelength <-> sRGB function
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+// FIXME compare vs integer bitfields
+// FIXME compare vs native texture generation
 const float C_A = 434073., C_B = 497559., C_C = 397590., C_D = 498071.,C_E = 988959., C_F = 988945., C_G = 400790., C_H = 630681.,C_I = 467495., C_J = 467491., C_K = 611161., C_L = 69919.,C_M = 653721., C_N = 638361., C_O = 432534., C_P = 497425.,C_Q = 432606., C_R = 497497., C_S = 923271., C_T = 991778.,C_U = 629142., C_V = 629075., C_W = 646615., C_X = 628377.,C_Y = 628292., C_Z = 1016879., C_1 = 291919., C_2 = 493087.,C_3 = 495239., C_4 = 630408., C_5 = 988807., C_6 = 272278.,C_7 = 1016900., C_8 = 431766., C_9 = 433730., C_0 = 433590.,C_dot = 1024.;
 
 float gB(float g, vec2 gp){
@@ -123,73 +137,102 @@ bool mask(vec2 p) {
 	return g > 0.;
 }
 
+float w(vec3 p) { return min(p.y+2., length(p)-2.); }
+vec3 wn(vec3 p) { return normalize(vec3(
+	w(p+E.yxx),w(p+E.xyx),w(p+E.xxy))-w(p));
+}
+
 void main() {
 	vec2 uv=(gl_FragCoord.xy/R)*2.-1.;uv.x*=R.x/R.y;
 
+	/* rand_seed = 0xfffffffu*uint(hash2(uv)+hash1(t)); */
+	/* rand_seed = uint(gl_FragCoord.x + gl_FragCoord.y); */
+	/* rand_seed += uint(t); */
+	/* rand(); */
+	/* rand_seed *= rand_seed; */
+	//gl_FragColor=vec4(rand(), rand(), rand(), rand());return;
 	//gl_FragColor=vec4(noise2(uv*10.));return;
 	//gl_FragColor=vec4(printText(uv*80.));return;
 
 	vec3 c=vec3(0.);
 	float seed = t;
 
-	////////////// TWEAK THESE
-	float ls = .05, // lens size
-				lf = 3.,// * sin(t*.1), // focus distance
-				lS = 1.; // fov-ish
-	//vec3 sz = vec3(3.5,2.,3.);
-	float or = 8.;
 	//mat3 mv = mat3(1,0,0,0,1,0,0,0,1);
-	//mv = RY(0.);
-	//mv = RY(2.*sin(t*.01))*RY(3.*sin(t*.039));
 
 	vec3 sundir = normalize(vec3(-.5,.5,.4));
 
+	int phase = int(mod(t/20., 7.));
+
 	// PATHTRACER STARTS
-	lS *= lf;
 	float NS = 64.;
 	//float T = t;
 	sundir = normalize(sundir + vec3(0.,.5*sin(t/4.),0.));
 	for (float s=0.;s<NS;++s) {
-
-		/*
-		//float tt = t - s/NS/60.; // FIXME merge-with-previous-frame blur
-		float tt = 221.;
-		mv = RX(.2+.6*cos(tt*.037))*RY(2.+2.*sin(tt*.05));
-		float a = hash1(seed+=uv.y)*2.*PI,
-					r = s/NS;//*hash1(seed+=uv.y);
-		O = vec3(vec2(cos(a),sin(a))*r*ls, or);
-		vec3 at = vec3(uv*lS, O.z-lf);
-		D = normalize(at - O) * mv; O *= mv;
-		//O.z = 1.;
-		O += vec3(5., 0., 0.);
-		*/
-
 		float tt = t;
+		float yu = 0.;
+		float dof = .4;
+		float fov = 1. + 1. * fract(t/32.);
 
 		vec3 ca = vec3(0., -1., 0.);
 		vec3 cp = vec3(0., 1.9, 5.);
-
-		float yu = 0.;
-		float dof = .4;
-		float fov = 1. + 1. * fract(t/32.); cp.z += 4. * fract(t/32.);
+		cp.z += 4. * fract(t/32.);
 		float lfoc = length(ca-cp);
 		//lfoc = 1. + 24. * fract(t / 64.);
+		if (phase < 6) {
+			ca = vec3(0.);
+			cp = vec3(0., 0., 5.);
+			fov = 2.;
+		}
 
-	float a = hash1(seed+=uv.x)*6.2831;
-	O = normalize(ca-cp);
-	D = normalize(cross(O, vec3(.3*yu,1.,0.)));
-	vec3 up = normalize(cross(D, O));
-	mat3 mv = mat3(D, up, -O);
+		float a = hash1(seed+=uv.x)*6.2831;
+		O = normalize(ca-cp);
+		D = normalize(cross(O, vec3(.3*yu,1.,0.)));
+		vec3 up = normalize(cross(D, O));
+		mat3 mv = mat3(D, up, -O);
 
-	// TODO dolly zoom
+		// TODO buildup:
+		// 1. sphere on a plane, no lighting, just color, no AAA ("fake" raymarching artifacts)
+		// 2. length-based color
+		// 3. normal
+		// 4. simple lambert lighting
+		// 5. ?????
+		// 6. path trace for i in 1..N bounce w simple light source (sky? ball?), materials are very simple
+		// 7. wet floor material
+		// 8. ????? show more materials?
+		// 9. first greeting
+		// 10. materials caleidoscope and greetings
+		if (phase < 6) {
+			O = vec3(0.);
+			D = mv*normalize(vec3(uv/fov, -1.)*lfoc - O);
+			O = mv*O + cp;
 
-	// TODO AA
-	vec2 uvaa = vec2(0.);
+			float d, l = 0., L = 5. + 10. * float(phase);
+			float steps = 10. + 10. * float(phase);
+			//float steps = 1. + mod(t, 10.);
+			for (float i = 0.; i < steps; ++i) {
+				d = w(P = O + D * l);
+				l += d;
+				if (d < .001 || l > L) break;
+			}
+			if (l < L) {
+				if (phase == 0) c = vec3(1.);
+				else if (phase == 1) c = vec3(l/L);
+				else if (phase == 2) c = P;
+				else if (phase == 3) c = fract(P);
+				else if (phase == 4) c = wn(P);
+				else c = vec3(max(0., dot(wn(P), sundir)));
+				c *= NS;
+			}
+			break;
+		}
 
-	// TODO different aprerture forms
-	O = vec3(vec2(cos(a),sin(a))*sqrt(hash1(seed+=uv.y))*dof,0.);
-	D = mv*normalize(vec3((uv + uvaa) / fov, -1.)*lfoc - O);
-	O = mv*O + cp;
+		// TODO dolly zoom
+		// TODO AA
+		vec2 uvaa = vec2(0.);
+		// TODO different aprerture forms
+		O = vec3(vec2(cos(a),sin(a))*sqrt(hash1(seed+=uv.y))*dof,0.);
+		D = mv*normalize(vec3((uv + uvaa) / fov, -1.)*lfoc - O);
+		O = mv*O + cp;
 
 		vec3 kc = vec3(1.);
 		float ins = 1.;
@@ -207,7 +250,7 @@ void main() {
 			vec3 me = vec3(0.), ma = vec3(0.);
 			float mr = 0.;
 			vec2 mf = vec2(1., 1.);
-			l = 99.;
+			l = 1e6;
 			M = 0;
 
 			if (D.y < 0.) {
@@ -217,18 +260,6 @@ void main() {
 				UV = P.xz;
 				M = 1;
 			}
-
-			// TODO buildup:
-			// 1. sphere on a plane, no lighting, just color, no AAA ("fake" raymarching artifacts)
-			// 2. length-based color
-			// 3. normal
-			// 4. simple lambert lighting
-			// 5. ?????
-			// 6. path trace for i in 1..N bounce w simple light source (sky? ball?), materials are very simple
-			// 7. wet floor material
-			// 8. ????? show more materials?
-			// 9. first greeting
-			// 10. materials caleidoscope and greetings
 
 			// TODO add small sphere as light source
 			// TODO transparency texture pattern
@@ -359,6 +390,7 @@ void main() {
 				D = normalize(mix(
 					reflect(D, N),
 					vec3(hash1(seed+=P.z),hash1(seed+=D.x),hash1(seed+=P.y))*2.-1., mr));
+					//vec3(rand(), rand(), rand())*2.-1., mr));
 				D *= sign(dot(D, N));
 			}
 		}
