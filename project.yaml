@@ -3,7 +3,7 @@ video:
 audio:
   samplerate: 44100
   channels: 2
-  bpm: 180
+  bpm: 125
   rows_per_beat: 4
   raw_file: audio.raw
 export:

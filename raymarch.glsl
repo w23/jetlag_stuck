@@ -161,7 +161,7 @@ void main() {
 
 	vec3 sundir = normalize(vec3(-.5,.5,.4));
 
-	int phase = int(mod(t/20., 7.));
+	int phase = int(t/32.);
 
 	// PATHTRACER STARTS
 	float NS = 64.;
