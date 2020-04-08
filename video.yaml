@@ -1,7 +1,7 @@
 programs:
   raymarch:
     vertex: vertex-dummy.glsl
-    fragment: raymarch.glsl
+    fragment: shader.frag
 paint:
   - useProgram: raymarch
   - drawFullscreen

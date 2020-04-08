@@ -68,8 +68,13 @@ const float C_A = 434073., C_B = 497559., C_C = 397590., C_D = 498071.,C_E = 988
 float gB(float g, vec2 gp){
 	return (gp.x<4.&&gp.y<5.) ? mod(floor(g / pow(2., gp.y*4. + gp.x)), 2.) : 0.;
 }
+float text_lx;
+float text_col;
+vec2 text_pc;
+vec2 text_pg;
 
-#define PC(g) if(pc.x==lx){col=gB(g,pg);}lx+=1.
+//#define PC(g) if(text_pc.x==text_lx){text_col=gB(g,text_pg);}text_lx+=1.
+void PC(float g) { if(text_pc.x==text_lx){text_col=gB(g,text_pg);}text_lx+=1.; }
 
 float diGlyph(in float di) {
 	if (di == 0.) return C_0;
@@ -84,7 +89,7 @@ float diGlyph(in float di) {
 	if (di == 9.) return C_9;
 	return C_E;
 }
-void printInt(in float num, in vec2 pg, in vec2 pc, inout float lx, inout float col) {
+void printInt(in float num, in vec2 text_pg, in vec2 text_pc, inout float text_lx, inout float text_col) {
 	/*if (num < 0.) {PC(C_N);
 	num *= -1.;
 	} else {PC(diGlyph(mod(floor(num/1000.),10.)));
@@ -99,35 +104,35 @@ void printInt(in float num, in vec2 pg, in vec2 pc, inout float lx, inout float 
 float printText(vec2 p) {
 #define PIXSZ 2.
 	p = floor(p / PIXSZ);
-	vec2 pc = floor(p / vec2(5.,6.));
-	vec2 pg = mod(p, vec2(5.,6.));
-	float lx = 1.;
-	float col = 0.;
+	text_pc = floor(p / vec2(5.,6.));
+	text_pg = mod(p, vec2(5.,6.));
+	text_lx = 1.;
+	text_col = 0.;
 
-#define PUTN(n) printInt(n,pg,pc,lx,col)
+//#define PUTN(n) printInt(n,text_pg,text_pc,text_lx,text_col)
 	//float rnd = floor(hash1(floor(t/8.)) * 10.);
 	float rnd = mod(floor(t/8.), 11.);
-	if (pc.y == 0.) {
-	PUTN(t);
-	PC(0.);
-	PC(0.);
-	PC(0.);
-	//PC(C_L); PC(C_E); PC(C_V); PC(C_E); PC(C_L); PC(0.);
-	if (rnd == 0.) { PC(C_L);PC(C_O);PC(C_G);PC(C_I);PC(C_C);PC(C_O);PC(C_M);PC(C_A); }
-	else if (rnd == 1.) { PC(C_F);PC(C_A);PC(C_R);PC(C_B);PC(C_R);PC(C_A);PC(C_U);PC(C_S);PC(C_C);PC(C_H); }
-	else if (rnd == 2.) { PC(C_L);PC(C_J); }
-	else if (rnd == 3.) { PC(C_P);PC(C_R);PC(C_I);PC(C_S);PC(C_M);PC(C_B);PC(C_E);PC(C_I);PC(C_N);PC(C_G);PC(C_S); }
-	else if (rnd == 4.) { PC(C_A);PC(C_L);PC(C_C);PC(C_A);PC(C_T);PC(C_R);PC(C_A);PC(C_Z); }
-	else if (rnd == 5.) { PC(C_C);PC(C_O);PC(C_N);PC(C_S);PC(C_P);PC(C_I);PC(C_R);PC(C_A);PC(C_C);PC(C_Y); }
-	else if (rnd == 6.) { PC(C_Q);PC(C_U);PC(C_I);PC(C_T);PC(C_E); }
-	else if (rnd == 7.) { PC(C_M);PC(C_E);PC(C_R);PC(C_C);PC(C_R);PC(C_U);PC(C_R);PC(C_Y); }
-	else if (rnd == 8.) { PC(C_S);PC(C_A);PC(C_N);PC(C_D);PC(C_S); }
-	else if (rnd == 9.) { PC(C_T);PC(C_I);PC(C_T);PC(C_A);PC(C_N); }
-	else if (rnd == 10.) { PC(C_T);PC(C_H);PC(C_R);PC(C_O);PC(C_B); }
-	} else if (pc.y == 1.) {
+	if (text_pc.y == 0.) {
+		//PUTN(t);
+		PC(0.);
+		PC(0.);
+		PC(0.);
+		//PC(C_L); PC(C_E); PC(C_V); PC(C_E); PC(C_L); PC(0.);
+		if (rnd == 0.) { PC(C_L);PC(C_O);PC(C_G);PC(C_I);PC(C_C);PC(C_O);PC(C_M);PC(C_A); }
+		else if (rnd == 1.) { PC(C_F);PC(C_A);PC(C_R);PC(C_B);PC(C_R);PC(C_A);PC(C_U);PC(C_S);PC(C_C);PC(C_H); }
+		else if (rnd == 2.) { PC(C_L);PC(C_J); }
+		else if (rnd == 3.) { PC(C_P);PC(C_R);PC(C_I);PC(C_S);PC(C_M);PC(C_B);PC(C_E);PC(C_I);PC(C_N);PC(C_G);PC(C_S); }
+		else if (rnd == 4.) { PC(C_A);PC(C_L);PC(C_C);PC(C_A);PC(C_T);PC(C_R);PC(C_A);PC(C_Z); }
+		else if (rnd == 5.) { PC(C_C);PC(C_O);PC(C_N);PC(C_S);PC(C_P);PC(C_I);PC(C_R);PC(C_A);PC(C_C);PC(C_Y); }
+		else if (rnd == 6.) { PC(C_Q);PC(C_U);PC(C_I);PC(C_T);PC(C_E); }
+		else if (rnd == 7.) { PC(C_M);PC(C_E);PC(C_R);PC(C_C);PC(C_R);PC(C_U);PC(C_R);PC(C_Y); }
+		else if (rnd == 8.) { PC(C_S);PC(C_A);PC(C_N);PC(C_D);PC(C_S); }
+		else if (rnd == 9.) { PC(C_T);PC(C_I);PC(C_T);PC(C_A);PC(C_N); }
+		else if (rnd == 10.) { PC(C_T);PC(C_H);PC(C_R);PC(C_O);PC(C_B); }
+	} else if (text_pc.y == 1.) {
 	}
 
-	return col;
+	return text_col;
 }
 
 bool mask(vec2 p) {
