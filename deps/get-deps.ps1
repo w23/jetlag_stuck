@@ -4,6 +4,7 @@ $script_dir += "\"
 
 function download([string]$url, [string]$filename) {
     Write-Host Downloading $url to $filename
+    [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
     $client.DownloadFile($url, $script_dir + $filename)
 }
 
