@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+project(gentext)
+add_executable(gentext gentext.cpp)
+target_compile_definitions(gentext PRIVATE UNICODE)
+#target_link_libraries(kiyanka PRIVATE opengl32 winmm)
