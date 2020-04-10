@@ -4,9 +4,9 @@ programs:
     fragment: shader.frag
 textures:
   text:
-    file: texture.jpg
+    file: texture.png
 paint:
   - useProgram: raymarch
   - bindTexture:
-     text: text
+     Tex: text
   - drawFullscreen

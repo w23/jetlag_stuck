@@ -27,13 +27,13 @@ extern __4klang_render@4
 %define SAMPLES_PER_TICK 44100/16
 %endif
 
-;GL_TEXTURE_2D EQU 0x0de1
+GL_TEXTURE_2D EQU 0x0de1
 GL_FRAGMENT_SHADER EQU 0x8b30
-;GL_UNSIGNED_BYTE EQU 0x1401
+GL_UNSIGNED_BYTE EQU 0x1401
 ;GL_FLOAT EQU 0x1406
-;GL_RGBA EQU 0x1908
-;GL_LINEAR EQU 0x2601
-;GL_TEXTURE_MIN_FILTER EQU 0x2801
+GL_RGBA EQU 0x1908
+GL_LINEAR EQU 0x2601
+GL_TEXTURE_MIN_FILTER EQU 0x2801
 ;GL_RGBA16F EQU 0x881a
 ;GL_FRAMEBUFFER EQU 0x8d40
 ;GL_COLOR_ATTACHMENT0 EQU 0x8ce0
@@ -72,14 +72,21 @@ WINAPI_FUNC waveOutWrite, 12
 WINAPI_FUNC wglCreateContext, 4
 WINAPI_FUNC wglGetProcAddress, 4
 WINAPI_FUNC wglMakeCurrent, 8
-;WINAPI_FUNC glGenTextures, 8
-;WINAPI_FUNC glBindTexture, 8
-;WINAPI_FUNC glTexImage2D, 36
-;WINAPI_FUNC glTexParameteri, 12
+WINAPI_FUNC glGenTextures, 8
+WINAPI_FUNC glBindTexture, 8
+WINAPI_FUNC glTexImage2D, 36
+WINAPI_FUNC glTexParameteri, 12
 WINAPI_FUNC glRects, 16
 %ifdef DEBUG
 WINAPI_FUNC glGetError, 0
 %endif
+WINAPI_FUNC CreateCompatibleDC, 4
+WINAPI_FUNC CreateDIBSection, 24
+WINAPI_FUNC SelectObject, 8
+WINAPI_FUNC SetTextColor, 8
+WINAPI_FUNC SetBkMode, 8
+WINAPI_FUNC CreateFontW, 56
+WINAPI_FUNC DrawTextA, 20
 
 %macro FNCALL 1-*
 	%rep %0-1
@@ -100,7 +107,7 @@ section _ %+ %1 data align=1
 GL_FUNC glCreateShaderProgramv
 GL_FUNC glUseProgram
 GL_FUNC glGetUniformLocation
-;GL_FUNC glUniform1i
+GL_FUNC glUniform1i
 GL_FUNC glUniform1f
 ;GL_FUNC glGenFramebuffers
 ;GL_FUNC glBindFramebuffer
@@ -144,6 +151,43 @@ pfd:
 	DD	00H, 00H, 00H
 %endif
 
+section _binfo data align=1
+TEXT_WIDTH EQU 512
+TEXT_HEIGHT EQU 1024
+bitmapinfo:
+	dd bitmapinfo_end - bitmapinfo
+	dd TEXT_WIDTH
+	dd TEXT_HEIGHT
+	dw 1
+	dw 32,
+	dd 0,
+	dd 0, 0, 0, 0, 0
+bitmapinfo_end:
+	dw 0
+
+section _font data align=1
+font:
+	dw __utf16__('Consolas'), 0
+
+section _text data align=1
+text:
+	db 'Notice me sempai', 10
+	db 'Farbrausch', 10
+	db 'Logicoma', 10
+	db 'LJ', 10
+	db 'Prismbeings', 10
+	db 'Alcatraz', 10
+	db 'Conspiracy', 10
+	db 'Quite', 10
+	db 'Mercury', 10
+	db 'SandS', 10
+	db 'Titan', 10
+	db 'Throb', 10
+	db 0
+
+section _rect data align=1
+rect:
+	dd 0, 0, TEXT_WIDTH, TEXT_HEIGHT
 section _wavefmt data align=1
 wavefmt:
 	dw 3 ; wFormatTag = WAVE_FORMAT_IEEE_FLOAT
@@ -197,7 +241,7 @@ section _strings data align=1
 static_: db "static", 0
 %endif
 
-section _text text align=1
+section _code text align=1
 _start:
 %if 1
 	%define ZERO 0
@@ -228,6 +272,30 @@ _start:
 %endif
 %endif
 
+	FNCALL CreateCompatibleDC, ZERO
+	mov ebx, eax
+	FNCALL CreateDIBSection, ebx, bitmapinfo, ZERO, waveout, ZERO, ZERO
+	mov edx, eax
+	FNCALL SelectObject, ebx, edx
+	FNCALL SetTextColor, ebx, 0x00ffffff
+	FNCALL SetBkMode, ebx, 1 ;TRANSPARENT
+	ANTIALIASED_QUALITY EQU 4
+	FNCALL CreateFontW, 44, ZERO, ZERO, ZERO, 700, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ANTIALIASED_QUALITY, ZERO, font
+	FNCALL SelectObject, ebx, eax
+  ;FNCALL DrawTextA, ebx, text, -1, ZERO, ZERO
+	DT_WORDBREAK EQU 0x10
+	DT_CALCRECT EQU 0x400
+  ;FNCALL DrawTextA, ebx, _shader_frag, -1, rect, (DT_CALCRECT | DT_WORDBREAK)
+  ;FNCALL DrawTextA, ebx, _shader_frag, -1, rect, DT_WORDBREAK
+  ;FNCALL DrawTextA, ebx, text, -1, rect, DT_CALCRECT
+  FNCALL DrawTextA, ebx, text, -1, rect, 0
+
+	TEX_TEXT EQU 1
+	FNCALL glGenTextures, 1, mmtime
+	FNCALL glBindTexture, GL_TEXTURE_2D, TEX_TEXT
+	FNCALL glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA, TEXT_WIDTH, TEXT_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, dword [waveout]
+	FNCALL glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR
+
 	FNCALL wglGetProcAddress, glCreateShaderProgramv
 	FNCALL eax, GL_FRAGMENT_SHADER, 1, src_main
 %ifdef DEBUG
@@ -249,6 +317,12 @@ _start:
 	FNCALL wglGetProcAddress, glUseProgram
 	FNCALL eax, esi
 	GLCHECK
+
+	FNCALL wglGetProcAddress, glGetUniformLocation
+	FNCALL eax, _var_TEX, esi
+	mov ebx, eax
+	FNCALL wglGetProcAddress, glUniform1i
+	FNCALL eax, ebx, 1
 
 	; PLAY MUSIC
 	FNCALL waveOutOpen, waveout, byte -1, wavefmt, ZERO, ZERO, ZERO

@@ -1,7 +1,8 @@
 #version 140
-uniform vec2 R;
+//uniform vec2 R;
+const vec2 R = vec2(1920., 1080.);
 uniform float t;
-uniform sampler2D text;
+uniform sampler2D Tex;
 
 const float PI=3.1415923;
 const vec3 E=vec3(0.,.01,1.);
@@ -62,7 +63,7 @@ vec3 hsv2rgb(vec3 c) {
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 bool mask(vec2 p) {
-	return texture2D(text, p * .01).r > .5;
+	return texture2D(Tex, p * .01).r > .5;
 }
 
 float w(vec3 p) { return min(p.y+2., length(p)-2.); }
@@ -73,7 +74,7 @@ vec3 wn(vec3 p) { return normalize(vec3(
 void main() {
 	vec2 uv=(gl_FragCoord.xy/R)*2.-1.;uv.x*=R.x/R.y;
 
-	//gl_FragColor = texture2D(text, uv); return;
+	//gl_FragColor = texture2D(Tex, uv); return;
 
 	/* rand_seed = 0xfffffffu*uint(hash2(uv)+hash1(t)); */
 	/* rand_seed = uint(gl_FragCoord.x + gl_FragCoord.y); */
