@@ -70,61 +70,96 @@ float w(vec3 p) { return min(p.y+2., length(p)-2.); }
 vec3 wn(vec3 p) { return normalize(vec3(
 	w(p+E.yxx),w(p+E.xyx),w(p+E.xxy))-w(p));
 }
+float tr(float l, float L, float steps) {
+	for (float i = 0.; i < steps; ++i) {
+		float d = w(P = O + D * l);
+		l += d;
+		if (d < .001 || l > L) break;
+	}
+	return l;
+}
 
 void main() {
 	vec2 uv=(gl_FragCoord.xy/R)*2.-1.;uv.x*=R.x/R.y;
-
 	//gl_FragColor = texture2D(Tex, uv); return;
-
-	/* rand_seed = 0xfffffffu*uint(hash2(uv)+hash1(t)); */
-	/* rand_seed = uint(gl_FragCoord.x + gl_FragCoord.y); */
-	/* rand_seed += uint(t); */
-	/* rand(); */
-	/* rand_seed *= rand_seed; */
-	//gl_FragColor=vec4(rand(), rand(), rand(), rand());return;
-	//gl_FragColor=vec4(noise2(uv*10.));return;
-	//gl_FragColor=vec4(printText(uv*80.));return;
 
 	vec3 c=vec3(0.);
 	float seed = t;
-
+	float bar = int(t/16.);
 	//mat3 mv = mat3(1,0,0,0,1,0,0,0,1);
 
 	vec3 sundir = normalize(vec3(-.5,.5,.4));
 
-	int phase = int(t/32.);
+	//float T = t;
+	//sundir = normalize(sundir + vec3(0.,.5*sin(t/4.),0.));
+	sundir = normalize(vec3(1.));
+	float dof = .4;
+	float fov = 1. + 1. * fract(t/32.);
+
+	vec3 ca = vec3(0., -1., 0.);
+	vec3 cp = vec3(0., 1.9, 5.);
+	cp.z += 4. * fract(t/32.);
+	//lfoc = 1. + 24. * fract(t / 64.);
+
+	bool text = false;
+	float mskymat = 0.;//mod(floor(t/8.),4.);
+	float mballmat = 0.;//mod(floor(t/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
+	float mfloormat = 1;//mod(floor(t/6.),3.);
+
+	if (t < 304.) {
+		//mskymat = 0.;
+		mskymat = 0.;
+		mballmat = 0.;
+		mfloormat = 0.;
+		dof = .01;
+		fov = 2.;
+
+		//ca = vec3(0., -.1, 0);
+		ca = vec3(0., 0., 0.);
+		cp = vec3(0., 1., 5. + 2. * fract(t/16.));
+	} else {
+		ca = vec3(
+			sin(bar*3.) * 4.,
+			sin(bar*4.),
+			sin(bar*5.) * 4.);
+
+		mskymat = 1.;
+		mballmat = 0.;
+		mfloormat = 0.;
+		dof = .2;
+		fov = 2.;
+
+		//ca = vec3(0., sin(t*.1), 0.);
+		cp = vec3(
+			sin(bar) * 10.,
+			2. + 2. * sin(bar*7.),
+			10. * cos(bar*3.));
+	}
+
+	if (t > 362.) {
+		mskymat = 1.;
+		mfloormat = 3.;
+		mballmat = 0.;
+
+		float ph = (t-362.) / 64;
+		ca = vec3(0., 0., 0.);
+		cp = vec3(0., 1., 5. + 2. * ph);
+		fov = 1. + 1. * ph;
+	}
+
+	float lfoc = length(ca-cp);
 
 	// PATHTRACER STARTS
-	float NS = 16.;
-	//float T = t;
-	sundir = normalize(sundir + vec3(0.,.5*sin(t/4.),0.));
+	float NS = 32.;
 	for (float s=0.;s<NS;++s) {
-		float tt = t;
 		float yu = 0.;
-		float dof = .4;
-		float fov = 1. + 1. * fract(t/32.);
 
-		vec3 ca = vec3(0., -1., 0.);
-		vec3 cp = vec3(0., 1.9, 5.);
-		cp.z += 4. * fract(t/32.);
-		float lfoc = length(ca-cp);
-		//lfoc = 1. + 24. * fract(t / 64.);
-		if (phase < 6) {
-			//ca = vec3(0.);
-			//cp = vec3(0., 0., 5.);
-			//fov = 2.;
-		}
-
-		float a = hash1(seed+=uv.x)*6.2831;
 		O = normalize(ca-cp);
 		D = normalize(cross(O, vec3(.3*yu,1.,0.)));
 		vec3 up = normalize(cross(D, O));
 		mat3 mv = mat3(D, up, -O);
 
 		// TODO buildup:
-		// 1. sphere on a plane, no lighting, just color, no AAA ("fake" raymarching artifacts)
-		// 2. length-based color
-		// 3. normal
 		// 4. simple lambert lighting
 		// 5. ?????
 		// 6. path trace for i in 1..N bounce w simple light source (sky? ball?), materials are very simple
@@ -132,52 +167,53 @@ void main() {
 		// 8. ????? show more materials?
 		// 9. first greeting
 		// 10. materials caleidoscope and greetings
-		if (phase < 6) {
+		if (t < 266.) {
 			//O = vec3(0.);
 			D = mv*normalize(vec3(uv/fov, -1.)*lfoc - O);
 			O = mv*O + cp;
 
-			float d, l = 0., L = 5. + 10. * float(phase);
-			float steps = 10. + 10. * float(phase);
+			float l = 0., L = 10. + 10. * float(bar);
+			float steps = 50.;// + 10. * float(bar);
 			//float steps = 1. + mod(t, 10.);
-			for (float i = 0.; i < steps; ++i) {
-				d = w(P = O + D * l);
-				l += d;
-				if (d < .001 || l > L) break;
-			}
+			l = tr(0., L, steps);
 			if (l < L) {
-				if (phase == 0) c = vec3(1.);
-				else if (phase == 1) c = vec3(l/L);
-				else if (phase == 2) c = P;
-				else if (phase == 3) c = fract(P);
-				else if (phase == 4) c = wn(P);
-				else c = vec3(max(0., dot(wn(P), sundir)));
+				vec3 n = wn(P);
+				if (bar < 2) c = vec3(1.);
+				else if (bar < 4) c = vec3(l/L);
+				else if (bar < 6) c = P;
+				else if (bar < 8) c = fract(P);
+				else if (bar < 10) c = n;
+				else {
+					O = P;
+					c += .8 * vec3(max(0., dot(n, sundir)));
+					D = sundir;
+					if (bar > 14)
+						c *= step(5., tr(.1, 5., 20.));
+					if (bar > 12)
+						c = vec3(.01) + .5 *c;// + vec3(.5) * pow(max(0., dot(n,normalize(sundir-D))), 100.);
+					//c += vec3(.01);
+				}
 				c *= NS;
 			}
 			break;
 		}
 
 		// TODO dolly zoom
-		// TODO AA
-		vec2 uvaa = vec2(0.);
+		//vec2 uvaa = (vec2(hash1(seed+=s), hash1(seed+=s)) - .5)/R;
+		vec2 uvaa=vec2(0.);
 		// TODO different aprerture forms
+		float a = hash1(seed+=uv.x)*6.2831;
 		O = vec3(vec2(cos(a),sin(a))*sqrt(hash1(seed+=uv.y))*dof,0.);
 		D = mv*normalize(vec3((uv + uvaa) / fov, -1.)*lfoc - O);
 		O = mv*O + cp;
 
-		vec3 kc = vec3(1.);
 		float ins = 1.;
 		float hue = hash1(seed += P.x);
-		kc = hsv2rgb(vec3(hue,1.,1.));
-		float mskymat = mod(floor(tt/8.),4.);
-		float mballmat = mod(floor(tt/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
-		float mfloormat = mod(floor(tt/6.),3.);
-
-		//mskymat = 1.; mballmat = 0.; mfloormat = 3.;
+		vec3 kc = hsv2rgb(vec3(hue,1.,1.));
 
 		for (int i = 0; i < 6; ++i) {
-			vec3 me = vec3(0.), ma = vec3(0.);
-			float mr = 0.;
+			vec3 me = vec3(0.), ma = vec3(.8);
+			float mr = 1.;
 			vec2 mf = vec2(1., 1.);
 			l = 1e6;
 			M = 0;
@@ -190,71 +226,74 @@ void main() {
 				M = 1;
 			}
 
-			// TODO add small sphere as light source
+			// TODO add small sphere as light source?
 			// TODO transparency texture pattern
 			xsph(vec3(0.,0.,0.), 4., 2, ins);
 
-			// glyph plane
+			// text plane
 			float lp = -O.z / D.z;
-			if (lp > 0. && lp < l) {
+			if (text && lp > 0. && lp < l) {
 				vec3 p = O + D * lp;
 				if (mask(p.xy*8.+vec2(0.,3.))) {
 					P = p;
 					l = lp;
 					N = E.xxz;
 					UV = P.xy;
-					M = 4;
+					M = 3;
 				}
 			}
 
-			if (M == 0) {
+			if (M == 0) { // SKY
+				ma = vec3(0.);
 				if (mskymat == 0.) {
+						me = vec3(100.) * pow(max(0., dot(D,sundir)), 300.);
+				} else if (mskymat == 1.) {
 					vec2 skp = D.xz*(10.-O.y)/D.y * .1;
-					float sk = noise2(skp)*.5 + noise2(skp*2.1)*.25 + noise2(skp*3.8)*.125;
+					float sk = noise2(skp)*.5 + noise2(skp*12.1)*.25 + noise2(skp*3.8)*.125;
+					//sk =0.;
 					me = .3 * vec3(.3,.5,.9)
 						+ 400.*vec3(.9,.6,.2) * pow(max(0., dot(D,sundir)), 400.)
 						+ vec3(smoothstep(.4,.6,sk));
 						;
-				} else if (mskymat == 1.) {
-					me = 10. * vec3(step(abs(dot(D,sundir)+mod(tt/16.,1.)-1.), .05));
+				} else if (mskymat == 2.) {
+					me = 10. * vec3(step(abs(dot(D,sundir)+mod(t/16.,1.)-1.), .05));
 					vec3 bd = normalize(vec3(-1., .5, .1));
 					me += .1 * vec3(.4, .1, .3) * pow(max(0., dot(D,bd)), 3.);
 					bd = normalize(vec3(1., .3, .3));
 					me += .1 * vec3(.1, .5, .4) * pow(max(0., dot(D,bd)), 4.);
-				} else {
-					me = vec3(0.);
 				}
-			} else if (M == 4) {
-				ma = vec3(0.);
-				me = vec3(10.);
-			} else if (M == 2) {
+			} else if (M == 2) { // BALL
 				if (mballmat == 0.) {
+				} else if (mballmat == 1.) {
 					ma = vec3(.8);
 					mf = vec2(.5, mix(.95,.9,hue)); // FIXME fresnel angle dependent?
 					mr = .0;
-				} else if(mballmat == 1.) {
+				} else if(mballmat == 2.) {
 					ma = vec3(1.);
 					mf = vec2(1.,1.);
 					mr = .2;
-				} else if(mballmat == 2.) {
+				} else if(mballmat == 3.) {
 					me = N;
 					ma = vec3(1.);
 					mf = vec2(1.,1.);
 					mr = .4;
-				} else if(mballmat == 3.) {
+				} else if(mballmat == 4.) {
 					ma = vec3(1.);
 					mf = vec2(.0, mix(.85,.8,hue)); // FIXME fresnel angle dependent?
 					mr = .4;
 				}
-			} else {
+			} else if (M == 1) { // GROUND
 				if (mfloormat == 0.) {
+					//float r = length(P.xz);
+					//me = vec3(10.) * step(mod(r - (t-266), 100.), 1.) * max(0., 1.-(t-266)/16);
+				} else if (mfloormat == 1.) {
 					ma = vec3(.9);
 					mr = .5;
 					UV *= 4.;
 					vec2 cid = floor(UV);
 					vec2 cc = fract(UV)*2. - 1.;
 
-					vec2 rcid = vec2(floor(tt/2.) + length(cid), atan(cid.x, cid.y));
+					vec2 rcid = vec2(floor(t/2.) + length(cid), atan(cid.x, cid.y));
 
 					me += vec3(1.,.6,.3) * step(.97,hash2(rcid));//+hash2(tpat));
 					me += vec3(.3,.4,.9) * step(.98,hash2(rcid+1.));//+hash2(tpat));
@@ -278,7 +317,7 @@ void main() {
 					//me = vec3(0.);
 					//mr = 1.;
 					//ma = vec3(.8);
-				} else if (mfloormat == 1.) {
+				} else if (mfloormat == 2.) {
 					ma = vec3(1.);
 					float ns =
 						.5 * noise2(UV)
@@ -286,7 +325,7 @@ void main() {
 						+ .125 * noise2(UV * 3.9)
 						+ .0625 * noise2(UV * 9.);
 					mr = .2 + .2 * ns;
-				} else if (mfloormat == 2.) {
+				} else if (mfloormat == 3.) {
 					ma = vec3(1.);
 					UV *= .7;
 					float ns =
@@ -295,12 +334,15 @@ void main() {
 						+ .125 * noise2(UV * 3.9)
 						+ .0625 * noise2(UV * 9.);
 					mr = .01 + .2 * smoothstep(.4, .5, ns);
-				} else if (mfloormat == 3.) {
+				} else if (mfloormat == 4.) {
 					// https://circularlimited.bandcamp.com/track/disruption
 					ma = vec3(1.);
 					mr = .3;
 					me = vec3(step(abs(P.z + 2. * floor(mod(t, 8.)) - 8.), 1.));
 				}
+			} else { // TEXT
+				me = vec3(1.);
+				ma = vec3(0.);
 			}
 
 			//kc *= 1. - l/40.;
@@ -309,23 +351,25 @@ void main() {
 
 			if (all(lessThan(kc,vec3(.001)))) break;
 
-			O = P;
 			if (/*ins < 0 ||*/ hash1(seed+=P.x) > mf.x) {
+				O = P - .01 * N;
 				D = normalize(refract(D, N, mf.y));
-				O -= .01 * N;
 				ins = -ins;
 			} else {
-				O += .01 * N;
+				O = P + .01 * N;
+				/* if (hash1(seed+=D.z) > mr) { */
+				/* 	D = reflect(D, N); */
+				/* } else { */
+				/* 	D = vec3(hash1(seed+=P.z),hash1(seed+=D.x),hash1(seed+=P.y))-.5; */
+				/* } */
+				/* D = normalize(D); */
 				D = normalize(mix(
 					reflect(D, N),
-					vec3(hash1(seed+=P.z),hash1(seed+=D.x),hash1(seed+=P.y))*2.-1., mr));
-					//vec3(rand(), rand(), rand())*2.-1., mr));
+					vec3(hash1(seed+=P.z),hash1(seed+=D.x),hash1(seed+=P.y))-.5, mr));
 				D *= sign(dot(D, N));
 			}
 		}
 	}
 
-	c /= NS;
-
-	gl_FragColor=vec4(sqrt(c), 0);
+	gl_FragColor=vec4(sqrt(c/NS), 0);
 }
