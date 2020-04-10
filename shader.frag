@@ -32,53 +32,24 @@ float noise2(vec2 v) {
 /* mat3 RY(float a){float c=cos(a),s=sin(a);return mat3(c,0.,s,0.,1.,0.,-s,0.,c);} */
 /* mat3 RZ(float a){float c=cos(a),s=sin(a);return mat3(c,s,0.,-s,c,0.,0.,0.,1.);} */
 
-vec3 O, D, P, N;
-vec2 UV;
-int M;
-float l;
-
-void xsph(vec3 sc, float sr2, int mi, float ss) {
-	vec3 v = sc - O;
-	float b = dot(v, D);
-	float c = dot(v, v) - sr2;
-	float det2 = b * b - c;
-	if (det2 < 0.) return;
-	det2 = sqrt(det2);
-	float t1 = b - det2, t2 = b + det2;
-	if (t1 < 0.) t1 = 1e6;
-	if (t2 < 0.) t2 = 1e6;
-	float ls = min(t1, t2);
-	if (ls < l) {
-		l = ls;
-		P = O + D * l;
-		N = ss * normalize(P - sc);
-		M = mi;
-	}
-}
-
-// FIXME: replace by simpler wavelength <-> sRGB function
-vec3 hsv2rgb(vec3 c) {
-    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-bool mask(vec2 p) {
+float mtext = 0.;
+float mask(vec2 p) {
+	if (mtext < 1.) return 0.;
 	p -= 2.;
 	float line = floor(p.y / 1.5) + 1.;
-	if (line > 0. || line < -1.) return false;
+	if (line > 0. || line < -mtext) return 0.;
 	p.y = (line - 1. + line * (1. + mod(floor(t)/8., 16.))) * 1.5 + mod(p.y, 1.5);
-	if (p.x < 0. || p.x > 32.) return false;
-	return texture2D(Tex, p/32.).r > .5;
+	if (p.x < 0. || p.x > 32.) return 0.;
+	return texture2D(Tex, p/32.).r;
 }
 
 float w(vec3 p) { return min(p.y+2., length(p)-2.); }
 vec3 wn(vec3 p) { return normalize(vec3(
 	w(p+E.yxx),w(p+E.xyx),w(p+E.xxy))-w(p));
 }
-float tr(float l, float L, float steps) {
+float tr(vec3 O, vec3 D, float l, float L, float steps) {
 	for (float i = 0.; i < steps; ++i) {
-		float d = w(P = O + D * l);
+		float d = w(O + D * l);
 		l += d;
 		if (d < .001 || l > L) break;
 	}
@@ -90,8 +61,12 @@ void main() {
 	//gl_FragColor = texture2D(Tex, uv); return;
 
 	vec3 c=vec3(0.);
+	vec3 O, D, P, N;
+	vec2 UV;
+	float M;
+	float l;
 	float seed = fract(t + uv.x);
-	float bar = int(t/16.);
+	float bar = floor(t/16.);
 	//mat3 mv = mat3(1,0,0,0,1,0,0,0,1);
 
 	vec3 sundir = normalize(vec3(-.5,.5,.4));
@@ -107,7 +82,6 @@ void main() {
 	cp.z += 4. * fract(t/32.);
 	float lfoc = 0.;
 
-	bool text = false;
 	float mskymat = 0.;
 	float mballmat = 0.;
 	float mfloormat = 0;
@@ -182,11 +156,14 @@ void main() {
 	if (t > 832.) {
 		// FIXME proper material ranges
 		mskymat = mod(floor(t/8.),4.);
-		mballmat = mod(floor(t/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
-		mfloormat = mod(floor(t/6.),3.);
+		mballmat = mod(floor(t/4.)/*TODO beat sync, 4th beat is earlier*/,5.);
+		mfloormat = mod(floor(t/6.),4.);
+		if (mskymat == 3.)
+			mfloormat = 1.;
+		//mtext = 1.;
 
 		float ph = fract(t/16.);
-		float a = 7. * sin(bar), b = 7. * sin(bar+3.);
+		float a = sin(bar), b = sin(bar+3.);
 		/* cp = mix(cp, vec3( */
 		/* 	sin(bar+4.) * 10., */
 		/* 	2. + 2. * sin(bar*2.), */
@@ -194,22 +171,33 @@ void main() {
 		cp = ca + mix(
 			vec3(cos(a)*10.,2+2.*sin(bar*2.),sin(a)*10.),
 			vec3(cos(b)*10.,2+2.*sin(bar*3.),sin(b)*10.), ph * ph);
+		cp *= max(1., 8. / length(cp));
+		//cp *= min(1., length
+		//a = mix(fract(a)*7., 7.*fract(b), ph * ph);
+		//cp = vec3(cos(a)*10.,2+2.*sin(bar*2.),sin(a)*10.);
 		ca = vec3(
 			sin(bar*3.) * 2.,
 			sin(bar*4.),
 			sin(bar*5.) * 2.);
-		yu = 2. * sin(bar*17.);
+			yu = sin(bar*17.);
 	}
 
-	if (t > 980.) {
-		text = true;
+	if (t > 1016.) {
+		mtext = 1.;
 		ca = vec3(5., 1., 0.);
-		cp = vec3(10., 2., 10);
+		cp.z = abs(cp.z);
+		cp *= max(1., 8. / length(cp));
+
+		float ph = fract(t/64.);
+		fov = 1. + 2. * ph;
+		cp = vec3(10. * sin(bar + t/16.), 2., 10.);
 	}
 
 	if (t > 1152.) {
-		ca = vec3(0.);
+		//ca = vec3(0.);
 		mskymat = 0.;
+		cp = vec3(10., 2., 10.);
+		yu = 0.;
 	}
 
 	if (t > 1184.) {
@@ -221,7 +209,7 @@ void main() {
 	}
 
 	if (t > 1232.) {
-		text = false;
+		mtext = 0.;
 	}
 
 	lfoc += length(ca-cp);
@@ -229,29 +217,17 @@ void main() {
 	// PATHTRACER STARTS
 	float NS = 32.;
 	for (float s=0.;s<NS;++s) {
-		O = normalize(ca-cp);
-		D = normalize(cross(O, vec3(.3*yu,1.,0.)));
+		D = normalize(cross(O = normalize(ca-cp), vec3(yu,1.,0.)));
 		vec3 up = normalize(cross(D, O));
 		mat3 mv = mat3(D, up, -O);
 
-		// TODO buildup:
-		// 4. simple lambert lighting
-		// 5. ?????
-		// 6. path trace for i in 1..N bounce w simple light source (sky? ball?), materials are very simple
-		// 7. wet floor material
-		// 8. ????? show more materials?
-		// 9. first greeting
-		// 10. materials caleidoscope and greetings
 		if (t < 266.) {
-			//O = vec3(0.);
 			D = mv*normalize(vec3(uv/fov, -1.)*lfoc - O);
 			O = mv*O + cp;
 
-			float l = 0., L = 10. + 10. * float(bar);
-			float steps = 50.;// + 10. * float(bar);
-			//float steps = 1. + mod(t, 10.);
-			l = tr(0., L, steps);
+			float L = 100., l = tr(O, D, 0., L, 40.);
 			if (l < L) {
+				P = O + D * l;
 				vec3 n = wn(P);
 				if (bar < 2) c = vec3(1.);
 				else if (bar < 4) c = vec3(l/L);
@@ -259,11 +235,9 @@ void main() {
 				else if (bar < 8) c = fract(P);
 				else if (bar < 10) c = n;
 				else {
-					O = P;
 					c += .8 * vec3(max(0., dot(n, sundir)));
-					D = sundir;
 					if (bar > 14)
-						c *= step(5., tr(.1, 5., 20.));
+						c *= step(5., tr(P, sundir, .1, 5., 20.));
 					if (bar > 12)
 						c = vec3(.01) + .5 *c;// + vec3(.5) * pow(max(0., dot(n,normalize(sundir-D))), 100.);
 					//c += vec3(.01);
@@ -284,9 +258,10 @@ void main() {
 
 		float ins = 1.;
 		float hue = hash1(seed += P.x);
-		vec3 kc = hsv2rgb(vec3(hue,1.,1.));
+	// FIXME: replace by simpler wavelength <-> sRGB function
+		vec3 kc = clamp(abs(fract(vec3(3.,2.,1.)/3. + hue)*6.-3.)-1.,0.,1.);
 
-		for (int i = 0; i < 6; ++i) {
+		for (float i = 0.; i < 6.; ++i) {
 			vec3 me = vec3(0.), ma = vec3(.8);
 			float mr = 1.;
 			vec2 mf = vec2(1., 1.);
@@ -303,13 +278,27 @@ void main() {
 
 			// TODO add small sphere as light source?
 			// TODO transparency texture pattern
-			xsph(vec3(0.,0.,0.), 4., 2, ins);
+			float b = dot(-O, D);
+			float det2 = b * b - dot(-O, -O) + 4.;
+			if (det2 >= 0.) {
+				det2 = sqrt(det2);
+				float t1 = b - det2, t2 = b + det2;
+				if (t1 < 0.) t1 = 1e6;
+				if (t2 < 0.) t2 = 1e6;
+				float ls = min(t1, t2);
+				if (ls < l) {
+					l = ls;
+					P = O + D * l;
+					N = ins * normalize(P);
+					M = 2;
+				}
+			}
 
 			// text plane
 			float lp = -O.z / D.z;
-			if (text && lp > 0. && lp < l) {
+			if (lp > 0. && lp < l) {
 				vec3 p = O + D * lp;
-				if (mask(p.xy)) {
+				if (mask(p.xy) > .5) {
 					P = p;
 					l = lp;
 					N = E.xxz;
@@ -324,7 +313,7 @@ void main() {
 						me = vec3(100.) * pow(max(0., dot(D,sundir)), 300.);
 				} else if (mskymat == 1.) {
 					vec2 skp = D.xz*(10.-O.y)/D.y * .1;
-					float sk = noise2(skp)*.5 + noise2(skp*12.1)*.25 + noise2(skp*3.8)*.125;
+					float sk = noise2(skp)*.5 + noise2(skp*12.1)*.125 + noise2(skp*3.8)*.125 + noise2(skp*9.)*.0625;
 					//sk =0.;
 					me = .3 * vec3(.3,.5,.9)
 						+ 400.*vec3(.9,.6,.2) * pow(max(0., dot(D,sundir)), 400.)
