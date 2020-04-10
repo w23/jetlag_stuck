@@ -1,4 +1,4 @@
-#version 140
+//#version 140
 //uniform vec2 R;
 uniform float t;
 uniform sampler2D Tex;
@@ -32,15 +32,33 @@ float noise2(vec2 v) {
 /* mat3 RY(float a){float c=cos(a),s=sin(a);return mat3(c,0.,s,0.,1.,0.,-s,0.,c);} */
 /* mat3 RZ(float a){float c=cos(a),s=sin(a);return mat3(c,s,0.,-s,c,0.,0.,0.,1.);} */
 
-float mtext = 0.;
+//float mtext = 0.;
 float mask(vec2 p) {
-	if (mtext < 1.) return 0.;
-	p -= 2.;
-	float line = floor(p.y / 1.5) + 1.;
-	if (line > 0. || line < -mtext) return 0.;
-	p.y = (line - 1. + line * (1. + mod(floor(t)/8., 16.))) * 1.5 + mod(p.y, 1.5);
+	if (t < 1016.) return 0.;
 	if (p.x < 0. || p.x > 32.) return 0.;
-	return texture2D(Tex, p/32.).r;
+	if (p.y > 2.8 ) return 0.;
+	//if (p.y > 1.8 || p.y < -1.) return 0.;
+	p -= 2.;
+
+		float line = floor(p.y / 1.5);
+		//if (line >= 0.) return 0.;
+		//if (line > 0. || line < -mtext) return 0.;
+		//if (line > 0. || line < -1.) return 0.;
+		if (t < 1152.) {
+			if (line == -1.) {
+			} else if (line == -2.) {
+				line = (t < 1056.) ? 0. : -2. - floor(t-1056.)/8.;
+			} else {
+				return 0.;
+			}
+		} else {
+			line -= 16.;
+		}
+		//line = 1.;
+		//line -= (1. + mod(floor(t)/8., 16.));
+		p.y = line * 1.5 + mod(p.y, 1.5);
+		//p.y = (line - 1. + line * (1. + mod(floor(t)/8., 16.))) * 1.5 + mod(p.y, 1.5);
+		return texture2D(Tex, p/32.).r;
 }
 
 float w(vec3 p) { return min(p.y+2., length(p)-2.); }
@@ -183,14 +201,14 @@ void main() {
 	}
 
 	if (t > 1016.) {
-		mtext = 1.;
+		//mtext = 1.;
 		ca = vec3(5., 1., 0.);
 		cp.z = abs(cp.z);
 		cp *= max(1., 8. / length(cp));
 
 		float ph = fract(t/64.);
 		fov = 1. + 2. * ph;
-		cp = vec3(10. * sin(bar + t/16.), 2., 10.);
+		cp = vec3(8. + 10. * sin(bar + t/16.), 2., 10.);
 	}
 
 	if (t > 1152.) {
@@ -208,15 +226,16 @@ void main() {
 		mballmat = 1.;
 	}
 
+	/*
 	if (t > 1232.) {
 		mtext = 0.;
 	}
+	*/
 
 	lfoc += length(ca-cp);
 
 	// PATHTRACER STARTS
-	float NS = 32.;
-	for (float s=0.;s<NS;++s) {
+	for (float s=0.;s<32.;++s) {
 		D = normalize(cross(O = normalize(ca-cp), vec3(yu,1.,0.)));
 		vec3 up = normalize(cross(D, O));
 		mat3 mv = mat3(D, up, -O);
@@ -242,7 +261,7 @@ void main() {
 						c = vec3(.01) + .5 *c;// + vec3(.5) * pow(max(0., dot(n,normalize(sundir-D))), 100.);
 					//c += vec3(.01);
 				}
-				c *= NS;
+				c *= 32.;
 			}
 			break;
 		}
@@ -322,9 +341,9 @@ void main() {
 				} else if (mskymat == 2.) {
 					me = 10. * vec3(step(abs(dot(D,sundir)+mod(t/16.,1.)-1.), .05));
 					vec3 bd = normalize(vec3(-1., .5, .1));
-					me += .1 * vec3(.4, .1, .3) * pow(max(0., dot(D,bd)), 3.);
+					me += .2 * vec3(.4, .1, .3) * pow(max(0., dot(D,bd)), 3.);
 					bd = normalize(vec3(1., .3, .3));
-					me += .1 * vec3(.1, .5, .4) * pow(max(0., dot(D,bd)), 4.);
+					me += .2 * vec3(.1, .5, .4) * pow(max(0., dot(D,bd)), 4.);
 				}
 			} else if (M == 2) { // BALL
 				if (mballmat == 0.) {
@@ -435,5 +454,5 @@ void main() {
 		}
 	}
 
-	gl_FragColor=vec4(sqrt(c/NS), 0);
+	gl_FragColor=vec4(sqrt(c/32.), 0.);
 }
