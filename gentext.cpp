@@ -87,7 +87,7 @@ int main() {
 		*/
 	}
 
-	stbi_flip_vertically_on_write(1);
+	//stbi_flip_vertically_on_write(1);
 	int result = stbi_write_png("texture.png", TEXT_WIDTH, TEXT_HEIGHT, 4, bitmap_ptr, 4 * TEXT_WIDTH);
 	printf("stbi result = %d\n", result);
 	result = stbi_write_jpg("texture.jpg", TEXT_WIDTH, TEXT_HEIGHT, 4, bitmap_ptr, 80);

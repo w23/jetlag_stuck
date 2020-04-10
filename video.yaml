@@ -2,6 +2,11 @@ programs:
   raymarch:
     vertex: vertex-dummy.glsl
     fragment: shader.frag
+textures:
+  text:
+    file: texture.jpg
 paint:
   - useProgram: raymarch
+  - bindTexture:
+     text: text
   - drawFullscreen

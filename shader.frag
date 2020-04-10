@@ -1,6 +1,7 @@
 #version 140
 uniform vec2 R;
 uniform float t;
+uniform sampler2D text;
 
 const float PI=3.1415923;
 const vec3 E=vec3(0.,.01,1.);
@@ -60,86 +61,8 @@ vec3 hsv2rgb(vec3 c) {
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
-
-// FIXME compare vs integer bitfields
-// FIXME compare vs native texture generation
-const float C_A = 434073., C_B = 497559., C_C = 397590., C_D = 498071.,C_E = 988959., C_F = 988945., C_G = 400790., C_H = 630681.,C_I = 467495., C_J = 467491., C_K = 611161., C_L = 69919.,C_M = 653721., C_N = 638361., C_O = 432534., C_P = 497425.,C_Q = 432606., C_R = 497497., C_S = 923271., C_T = 991778.,C_U = 629142., C_V = 629075., C_W = 646615., C_X = 628377.,C_Y = 628292., C_Z = 1016879., C_1 = 291919., C_2 = 493087.,C_3 = 495239., C_4 = 630408., C_5 = 988807., C_6 = 272278.,C_7 = 1016900., C_8 = 431766., C_9 = 433730., C_0 = 433590.,C_dot = 1024.;
-
-float gB(float g, vec2 gp){
-	return (gp.x<4.&&gp.y<5.) ? mod(floor(g / pow(2., gp.y*4. + gp.x)), 2.) : 0.;
-}
-float text_lx;
-float text_col;
-vec2 text_pc;
-vec2 text_pg;
-
-//#define PC(g) if(text_pc.x==text_lx){text_col=gB(g,text_pg);}text_lx+=1.
-void PC(float g) { if(text_pc.x==text_lx){text_col=gB(g,text_pg);}text_lx+=1.; }
-
-float diGlyph(in float di) {
-	if (di == 0.) return C_0;
-	if (di == 1.) return C_1;
-	if (di == 2.) return C_2;
-	if (di == 3.) return C_3;
-	if (di == 4.) return C_4;
-	if (di == 5.) return C_5;
-	if (di == 6.) return C_6;
-	if (di == 7.) return C_7;
-	if (di == 8.) return C_8;
-	if (di == 9.) return C_9;
-	return C_E;
-}
-void printInt(in float num, in vec2 text_pg, in vec2 text_pc, inout float text_lx, inout float text_col) {
-	/*if (num < 0.) {PC(C_N);
-	num *= -1.;
-	} else {PC(diGlyph(mod(floor(num/1000.),10.)));
-}*/
-
-	if (num >= 1000.) { PC(diGlyph(mod(floor(num/1000.),10.))); }
-	if (num >= 100.) { PC(diGlyph(mod(floor(num/100.),10.))); }
-	if (num >= 10.) { PC(diGlyph(mod(floor(num/10.),10.))); }
-	PC(diGlyph(mod(floor(num),10.)));
-}
-
-float printText(vec2 p) {
-#define PIXSZ 2.
-	p = floor(p / PIXSZ);
-	text_pc = floor(p / vec2(5.,6.));
-	text_pg = mod(p, vec2(5.,6.));
-	text_lx = 1.;
-	text_col = 0.;
-
-//#define PUTN(n) printInt(n,text_pg,text_pc,text_lx,text_col)
-	//float rnd = floor(hash1(floor(t/8.)) * 10.);
-	float rnd = mod(floor(t/8.), 11.);
-	if (text_pc.y == 0.) {
-		//PUTN(t);
-		PC(0.);
-		PC(0.);
-		PC(0.);
-		//PC(C_L); PC(C_E); PC(C_V); PC(C_E); PC(C_L); PC(0.);
-		if (rnd == 0.) { PC(C_L);PC(C_O);PC(C_G);PC(C_I);PC(C_C);PC(C_O);PC(C_M);PC(C_A); }
-		else if (rnd == 1.) { PC(C_F);PC(C_A);PC(C_R);PC(C_B);PC(C_R);PC(C_A);PC(C_U);PC(C_S);PC(C_C);PC(C_H); }
-		else if (rnd == 2.) { PC(C_L);PC(C_J); }
-		else if (rnd == 3.) { PC(C_P);PC(C_R);PC(C_I);PC(C_S);PC(C_M);PC(C_B);PC(C_E);PC(C_I);PC(C_N);PC(C_G);PC(C_S); }
-		else if (rnd == 4.) { PC(C_A);PC(C_L);PC(C_C);PC(C_A);PC(C_T);PC(C_R);PC(C_A);PC(C_Z); }
-		else if (rnd == 5.) { PC(C_C);PC(C_O);PC(C_N);PC(C_S);PC(C_P);PC(C_I);PC(C_R);PC(C_A);PC(C_C);PC(C_Y); }
-		else if (rnd == 6.) { PC(C_Q);PC(C_U);PC(C_I);PC(C_T);PC(C_E); }
-		else if (rnd == 7.) { PC(C_M);PC(C_E);PC(C_R);PC(C_C);PC(C_R);PC(C_U);PC(C_R);PC(C_Y); }
-		else if (rnd == 8.) { PC(C_S);PC(C_A);PC(C_N);PC(C_D);PC(C_S); }
-		else if (rnd == 9.) { PC(C_T);PC(C_I);PC(C_T);PC(C_A);PC(C_N); }
-		else if (rnd == 10.) { PC(C_T);PC(C_H);PC(C_R);PC(C_O);PC(C_B); }
-	} else if (text_pc.y == 1.) {
-	}
-
-	return text_col;
-}
-
 bool mask(vec2 p) {
-	p.x += 32.;
-	float g = printText(p);
-	g *= step(hash2(floor((p+floor(vec2(.4,.7)*t))/PIXSZ)), .8);
-	return g > 0.;
+	return texture2D(text, p * .01).r > .5;
 }
 
 float w(vec3 p) { return min(p.y+2., length(p)-2.); }
@@ -149,6 +72,8 @@ vec3 wn(vec3 p) { return normalize(vec3(
 
 void main() {
 	vec2 uv=(gl_FragCoord.xy/R)*2.-1.;uv.x*=R.x/R.y;
+
+	//gl_FragColor = texture2D(text, uv); return;
 
 	/* rand_seed = 0xfffffffu*uint(hash2(uv)+hash1(t)); */
 	/* rand_seed = uint(gl_FragCoord.x + gl_FragCoord.y); */
@@ -169,7 +94,7 @@ void main() {
 	int phase = int(t/32.);
 
 	// PATHTRACER STARTS
-	float NS = 64.;
+	float NS = 16.;
 	//float T = t;
 	sundir = normalize(sundir + vec3(0.,.5*sin(t/4.),0.));
 	for (float s=0.;s<NS;++s) {
@@ -184,9 +109,9 @@ void main() {
 		float lfoc = length(ca-cp);
 		//lfoc = 1. + 24. * fract(t / 64.);
 		if (phase < 6) {
-			ca = vec3(0.);
-			cp = vec3(0., 0., 5.);
-			fov = 2.;
+			//ca = vec3(0.);
+			//cp = vec3(0., 0., 5.);
+			//fov = 2.;
 		}
 
 		float a = hash1(seed+=uv.x)*6.2831;
@@ -207,7 +132,7 @@ void main() {
 		// 9. first greeting
 		// 10. materials caleidoscope and greetings
 		if (phase < 6) {
-			O = vec3(0.);
+			//O = vec3(0.);
 			D = mv*normalize(vec3(uv/fov, -1.)*lfoc - O);
 			O = mv*O + cp;
 
@@ -244,12 +169,10 @@ void main() {
 		float hue = hash1(seed += P.x);
 		kc = hsv2rgb(vec3(hue,1.,1.));
 		float mskymat = mod(floor(tt/8.),4.);
-		float mballmat = mod(floor(tt/4.),4.);
+		float mballmat = mod(floor(tt/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
 		float mfloormat = mod(floor(tt/6.),3.);
 
-		mskymat = 1.;
-		mballmat = 0.;
-		mfloormat = 3.;
+		//mskymat = 1.; mballmat = 0.; mfloormat = 3.;
 
 		for (int i = 0; i < 6; ++i) {
 			vec3 me = vec3(0.), ma = vec3(0.);
