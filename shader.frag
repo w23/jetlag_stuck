@@ -143,8 +143,14 @@ void main() {
 
 		float ph = (t-362.) / 64;
 		ca = vec3(0., 0., 0.);
-		cp = vec3(0., 1., 5. + 2. * ph);
-		fov = 1. + 1. * ph;
+		cp = vec3(0., 1., 5. + 16. * ph);
+		fov = 1. + 2. * ph;
+	}
+
+	if (t > 490.) {
+		mballmat = 0.;
+		mfloormat = 1.;
+		mskymat = 3.;
 	}
 
 	float lfoc = length(ca-cp);
