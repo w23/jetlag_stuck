@@ -171,7 +171,7 @@ font:
 
 section _text data align=1
 text:
-	db 'Notice me sempai', 10
+	db 'Notice me senpai', 10
 	db 'Farbrausch', 10
 	db 'Logicoma', 10
 	db 'LJ', 10
@@ -287,7 +287,7 @@ _start:
 	DT_CALCRECT EQU 0x400
   ;FNCALL DrawTextA, ebx, _shader_frag, -1, rect, (DT_CALCRECT | DT_WORDBREAK)
   ;FNCALL DrawTextA, ebx, _shader_frag, -1, rect, DT_WORDBREAK
-  ;FNCALL DrawTextA, ebx, text, -1, rect, DT_CALCRECT
+  FNCALL DrawTextA, ebx, text, -1, rect, DT_CALCRECT
   FNCALL DrawTextA, ebx, text, -1, rect, 0
 
 	TEX_TEXT EQU 1

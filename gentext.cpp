@@ -18,13 +18,13 @@ struct Label {
 //const wchar_t rojikoma[] = { 0x30ed, 0x30b8, 0x30b3, 0x30de, 0x0020, 0x0425, 0x0423, 0x0419, 0 };
 
 Label labels[] = {
-	"Notice me sempai",
-	"Farbrausch",
-	"Logicoma",
+	"Notice me senpai\n"
+	"Farbrausch\n"
+	"Logicoma\n"
 	"LJ\nPrismbeings\nAlcatraz\nConspiracy\nQuite\nMercury\nSandS\nTitan\nThrob\n"
 };
 
-const unsigned int TEXT_WIDTH = 512, TEXT_HEIGHT = 512;
+const unsigned int TEXT_WIDTH = 512, TEXT_HEIGHT = 1024;
 static BITMAPINFO bitmap_info = {{
 	/*biSize = */sizeof(BITMAPINFOHEADER),
 	/*biWidth = */TEXT_WIDTH,
