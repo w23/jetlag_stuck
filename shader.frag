@@ -141,16 +141,35 @@ void main() {
 		mfloormat = 3.;
 		mballmat = 0.;
 
-		float ph = (t-362.) / 64;
+		float ph = fract((t-362.) / 128.);
 		ca = vec3(0., 0., 0.);
-		cp = vec3(0., 1., 5. + 16. * ph);
-		fov = 1. + 2. * ph;
+		cp = vec3(0., 1., 5. + 32. * ph);
+		fov = 1. + 4. * ph;
 	}
 
 	if (t > 490.) {
-		mballmat = 0.;
-		mfloormat = 1.;
-		mskymat = 3.;
+		mballmat = 1.;
+		//mfloormat = 1.;
+		//mskymat = 3.;
+		dof = .4;
+	}
+
+	if (t > 580.) {
+		ca = vec3(
+			sin(bar*3.) * 4.,
+			sin(bar*4.),
+			sin(bar*5.) * 4.);
+		cp = vec3(
+			sin(bar) * 10.,
+			2. + 2. * sin(bar*7.),
+			10. * cos(bar*3.));
+	}
+
+	if (t > 704.) {
+		mballmat = 2.;
+		//mfloormat = 1.;
+		mskymat = 2.;
+		dof = .4;
 	}
 
 	float lfoc = length(ca-cp);
