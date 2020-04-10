@@ -17,7 +17,7 @@ const vec3 E=vec3(0.,.01,1.);
 /* 	return float(rand_seed) / float(0xffffffffu); */
 /* } */
 
-float hash1(float f){return fract(sin(f)*46347.423874);}
+float hash1(float f){return fract(sin(f)*46347.4238);}
 float hash2(vec2 v){return hash1(dot(v,vec2(79.53248,31.4328)));}
 
 float noise2(vec2 v) {
@@ -90,7 +90,7 @@ void main() {
 	//gl_FragColor = texture2D(Tex, uv); return;
 
 	vec3 c=vec3(0.);
-	float seed = t;
+	float seed = fract(t + uv.x);
 	float bar = int(t/16.);
 	//mat3 mv = mat3(1,0,0,0,1,0,0,0,1);
 
@@ -277,7 +277,7 @@ void main() {
 		//vec2 uvaa = (vec2(hash1(seed+=s), hash1(seed+=s)) - .5)/R;
 		vec2 uvaa=vec2(0.);
 		// TODO different aprerture forms
-		float a = hash1(seed+=uv.x)*6.2831;
+		float a = hash1(seed+=O.x)*6.2831;
 		O = vec3(vec2(cos(a),sin(a))*sqrt(hash1(seed+=uv.y))*dof,0.);
 		D = mv*normalize(vec3((uv + uvaa) / fov, -1.)*lfoc - O);
 		O = mv*O + cp;
@@ -426,7 +426,7 @@ void main() {
 
 			if (all(lessThan(kc,vec3(.001)))) break;
 
-			if (/*ins < 0 ||*/ hash1(seed+=P.x) > mf.x) {
+			if (/*ins < 0 ||*/ hash1(seed+=P.y) > mf.x) {
 				O = P - .01 * N;
 				D = normalize(refract(D, N, mf.y));
 				ins = -ins;
