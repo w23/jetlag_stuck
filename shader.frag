@@ -67,7 +67,7 @@ bool mask(vec2 p) {
 	p -= 2.;
 	float line = floor(p.y / 1.5) + 1.;
 	if (line > 0. || line < -1.) return false;
-	p.y = (line - 1. + line * floor(t)/8.) * 1.5 + mod(p.y, 1.5);
+	p.y = (line - 1. + line * (1. + mod(floor(t)/8., 16.))) * 1.5 + mod(p.y, 1.5);
 	if (p.x < 0. || p.x > 32.) return false;
 	return texture2D(Tex, p/32.).r > .5;
 }
@@ -180,7 +180,6 @@ void main() {
 	}
 
 	if (t > 832.) {
-		text = true;
 		// FIXME proper material ranges
 		mskymat = mod(floor(t/8.),4.);
 		mballmat = mod(floor(t/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
@@ -196,15 +195,33 @@ void main() {
 			vec3(cos(a)*10.,2+2.*sin(bar*2.),sin(a)*10.),
 			vec3(cos(b)*10.,2+2.*sin(bar*3.),sin(b)*10.), ph * ph);
 		ca = vec3(
-			sin(bar*3.) * 4.,
+			sin(bar*3.) * 2.,
 			sin(bar*4.),
-			sin(bar*5.) * 4.);
+			sin(bar*5.) * 2.);
 		yu = 2. * sin(bar*17.);
 	}
 
 	if (t > 980.) {
+		text = true;
 		ca = vec3(5., 1., 0.);
 		cp = vec3(10., 2., 10);
+	}
+
+	if (t > 1152.) {
+		ca = vec3(0.);
+		mskymat = 0.;
+	}
+
+	if (t > 1184.) {
+		mfloormat = 3.;
+	}
+
+	if (t > 1216.) {
+		mballmat = 1.;
+	}
+
+	if (t > 1232.) {
+		text = false;
 	}
 
 	lfoc += length(ca-cp);
