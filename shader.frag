@@ -99,12 +99,13 @@ void main() {
 	vec3 ca = vec3(0., -1., 0.);
 	vec3 cp = vec3(0., 1.9, 5.);
 	cp.z += 4. * fract(t/32.);
-	//lfoc = 1. + 24. * fract(t / 64.);
+	float lfoc = 0.;
 
 	bool text = false;
-	float mskymat = 0.;//mod(floor(t/8.),4.);
-	float mballmat = 0.;//mod(floor(t/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
-	float mfloormat = 1;//mod(floor(t/6.),3.);
+	float mskymat = 0.;
+	float mballmat = 0.;
+	float mfloormat = 0;
+	float yu = 0.;
 
 	if (t < 304.) {
 		//mskymat = 0.;
@@ -172,13 +173,34 @@ void main() {
 		dof = .4;
 	}
 
-	float lfoc = length(ca-cp);
+	if (t > 832.) {
+		text = true;
+		// FIXME proper material ranges
+		mskymat = mod(floor(t/8.),4.);
+		mballmat = mod(floor(t/4.)/*TODO beat sync, 4th beat is earlier*/,4.);
+		mfloormat = mod(floor(t/6.),3.);
+
+		float ph = fract(t/16.);
+		float a = 7. * sin(bar), b = 7. * sin(bar+3.);
+		/* cp = mix(cp, vec3( */
+		/* 	sin(bar+4.) * 10., */
+		/* 	2. + 2. * sin(bar*2.), */
+		/* 	10. * cos(bar+5.)), ph * ph); */
+		cp = ca + mix(
+			vec3(cos(a)*10.,2+2.*sin(bar*2.),sin(a)*10.),
+			vec3(cos(b)*10.,2+2.*sin(bar*3.),sin(b)*10.), ph * ph);
+		ca = vec3(
+			sin(bar*3.) * 4.,
+			sin(bar*4.),
+			sin(bar*5.) * 4.);
+		yu = sin(bar*7.);
+	}
+
+	lfoc += length(ca-cp);
 
 	// PATHTRACER STARTS
 	float NS = 32.;
 	for (float s=0.;s<NS;++s) {
-		float yu = 0.;
-
 		O = normalize(ca-cp);
 		D = normalize(cross(O, vec3(.3*yu,1.,0.)));
 		vec3 up = normalize(cross(D, O));
