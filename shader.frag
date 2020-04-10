@@ -62,8 +62,14 @@ vec3 hsv2rgb(vec3 c) {
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
+
 bool mask(vec2 p) {
-	return texture2D(Tex, p * .01).r > .5;
+	p -= 2.;
+	float line = floor(p.y / 1.5) + 1.;
+	if (line > 0. || line < -1.) return false;
+	p.y = (line - 1. + line * floor(t)/8.) * 1.5 + mod(p.y, 1.5);
+	if (p.x < 0. || p.x > 32.) return false;
+	return texture2D(Tex, p/32.).r > .5;
 }
 
 float w(vec3 p) { return min(p.y+2., length(p)-2.); }
@@ -193,7 +199,12 @@ void main() {
 			sin(bar*3.) * 4.,
 			sin(bar*4.),
 			sin(bar*5.) * 4.);
-		yu = sin(bar*7.);
+		yu = 2. * sin(bar*17.);
+	}
+
+	if (t > 980.) {
+		ca = vec3(5., 1., 0.);
+		cp = vec3(10., 2., 10);
 	}
 
 	lfoc += length(ca-cp);
@@ -281,7 +292,7 @@ void main() {
 			float lp = -O.z / D.z;
 			if (text && lp > 0. && lp < l) {
 				vec3 p = O + D * lp;
-				if (mask(p.xy*8.+vec2(0.,3.))) {
+				if (mask(p.xy)) {
 					P = p;
 					l = lp;
 					N = E.xxz;
@@ -313,7 +324,7 @@ void main() {
 				if (mballmat == 0.) {
 				} else if (mballmat == 1.) {
 					ma = vec3(.8);
-					mf = vec2(.5, mix(.95,.9,hue)); // FIXME fresnel angle dependent?
+					mf = vec2(.5, mix(.95,.8,hue)); // FIXME fresnel angle dependent?
 					mr = .0;
 				} else if(mballmat == 2.) {
 					ma = vec3(1.);
@@ -388,7 +399,7 @@ void main() {
 					me = vec3(step(abs(P.z + 2. * floor(mod(t, 8.)) - 8.), 1.));
 				}
 			} else { // TEXT
-				me = vec3(1.);
+				me = vec3(4.);
 				ma = vec3(0.);
 			}
 
