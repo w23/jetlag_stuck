@@ -152,7 +152,7 @@ pfd:
 %endif
 
 section _binfo data align=1
-TEXT_WIDTH EQU 512
+TEXT_WIDTH EQU 1024
 TEXT_HEIGHT EQU 1024
 bitmapinfo:
 	dd bitmapinfo_end - bitmapinfo

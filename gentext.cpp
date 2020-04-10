@@ -24,7 +24,7 @@ Label labels[] = {
 	"LJ\nPrismbeings\nAlcatraz\nConspiracy\nQuite\nMercury\nSandS\nTitan\nThrob\n"
 };
 
-const unsigned int TEXT_WIDTH = 512, TEXT_HEIGHT = 1024;
+const unsigned int TEXT_WIDTH = 1024, TEXT_HEIGHT = 1024;
 static BITMAPINFO bitmap_info = {{
 	/*biSize = */sizeof(BITMAPINFOHEADER),
 	/*biWidth = */TEXT_WIDTH,
