@@ -1,11 +1,11 @@
 #version 140
 //uniform vec2 R;
-const vec2 R = vec2(1920., 1080.);
 uniform float t;
 uniform sampler2D Tex;
 
-const float PI=3.1415923;
-const vec3 E=vec3(0.,.01,1.);
+//float PI=3.1415923;
+vec3 E=vec3(0.,.01,1.);
+vec2 R = vec2(1920., 1080.);
 
 // Is not random enough
 /* uint rand_seed = 1u; */

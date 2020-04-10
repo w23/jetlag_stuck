@@ -85,7 +85,7 @@ WINAPI_FUNC CreateDIBSection, 24
 WINAPI_FUNC SelectObject, 8
 WINAPI_FUNC SetTextColor, 8
 WINAPI_FUNC SetBkMode, 8
-WINAPI_FUNC CreateFontW, 56
+WINAPI_FUNC CreateFontA, 56
 WINAPI_FUNC DrawTextA, 20
 
 %macro FNCALL 1-*
@@ -167,22 +167,31 @@ bitmapinfo_end:
 
 section _font data align=1
 font:
-	dw __utf16__('Consolas'), 0
+	;dw __utf16__('Consolas'), 0
+	db 'Consolas', 0
 
 section _text data align=1
 text:
-	db 'Notice me senpai', 10
-	db 'Farbrausch', 10
-	db 'Logicoma', 10
+	db 'notice me senpai', 10
+	db 'alcatraz', 10
+	db 'conspiracy', 10
+	db 'ctrl-alt-test', 10
+	db 'fairlight', 10
+	db 'farbrausch', 10
 	db 'LJ', 10
-	db 'Prismbeings', 10
-	db 'Alcatraz', 10
-	db 'Conspiracy', 10
-	db 'Quite', 10
-	db 'Mercury', 10
+	db 'logicoma', 10
+	db 'mercury', 10
+	db 'orange', 10
+	db 'prismbeings', 10
+	db 'quite', 10
 	db 'SandS', 10
-	db 'Titan', 10
-	db 'Throb', 10
+	db 'still', 10
+	db 't-rex', 10
+	db 'throb', 10
+	db 'titan', 10
+	db 'jetlag/stuck', 10
+	db 'keen provod', 10
+	db 'revision 2020', 10
 	db 0
 
 section _rect data align=1
@@ -280,7 +289,7 @@ _start:
 	FNCALL SetTextColor, ebx, 0x00ffffff
 	FNCALL SetBkMode, ebx, 1 ;TRANSPARENT
 	ANTIALIASED_QUALITY EQU 4
-	FNCALL CreateFontW, 44, ZERO, ZERO, ZERO, 700, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ANTIALIASED_QUALITY, ZERO, font
+	FNCALL CreateFontA, 44, ZERO, ZERO, ZERO, 700, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ANTIALIASED_QUALITY, ZERO, font
 	FNCALL SelectObject, ebx, eax
   ;FNCALL DrawTextA, ebx, text, -1, ZERO, ZERO
 	DT_WORDBREAK EQU 0x10

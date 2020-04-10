@@ -18,10 +18,26 @@ struct Label {
 //const wchar_t rojikoma[] = { 0x30ed, 0x30b8, 0x30b3, 0x30de, 0x0020, 0x0425, 0x0423, 0x0419, 0 };
 
 Label labels[] = {
-	"Notice me senpai\n"
-	"Farbrausch\n"
-	"Logicoma\n"
-	"LJ\nPrismbeings\nAlcatraz\nConspiracy\nQuite\nMercury\nSandS\nTitan\nThrob\n"
+	"notice me senpai\n"
+	"alcatraz\n"
+	"conspiracy\n"
+	"ctrl-alt-test\n"
+	"fairlight\n"
+	"farbrausch\n"
+	"LJ\n"
+	"logicoma\n"
+	"mercury\n"
+	"orange\n"
+	"prismbeings\n"
+	"quite\n"
+	"SandS\n"
+	"still\n"
+	"t-rex\n"
+	"throb\n"
+	"titan\n"
+	"jetlag/stuck\n"
+	"keen provod\n"
+	"revision 2020\n"
 };
 
 const unsigned int TEXT_WIDTH = 1024, TEXT_HEIGHT = 1024;
@@ -50,14 +66,15 @@ int main() {
 
 	int size = 44;
 	//HFONT font = CreateFont(size, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*CLEARTYPE_QUALITY*/ NONANTIALIASED_QUALITY, 0, DEFAULT_FONT);
-	HFONT font = CreateFont(size, 0, 0, 0, 700, 0, 0, 0, 0, 0, 0, /*CLEARTYPE_QUALITY*/ ANTIALIASED_QUALITY, 0, DEFAULT_FONT);
+	//HFONT font = CreateFont(size, 0, 0, 0, 700, 0, 0, 0, 0, 0, 0, /*CLEARTYPE_QUALITY*/ ANTIALIASED_QUALITY, 0, DEFAULT_FONT);
+	HFONT font = CreateFontA(size, 0, 0, 0, 700, 0, 0, 0, 0, 0, 0, /*CLEARTYPE_QUALITY*/ ANTIALIASED_QUALITY, 0, "Consolas");
 	SelectObject(text_dc, font);
 	for (int i = 0; i < COUNTOF(labels); ++i) {
 		const Label &l = labels[i];
 
 		// needs rect; keeps newlines
 		if (l.ansi) {
-			DrawTextA(text_dc, l.ansi, -1, &rect, DT_CALCRECT);
+			//DrawTextA(text_dc, l.ansi, -1, &rect, DT_CALCRECT);
 			DrawTextA(text_dc, l.ansi, -1, &rect, 0);
 			//DrawTextA(text_dc, l.ansi, -1, &rect, DT_CENTER | DT_VCENTER | DT_CALCRECT);
 			//DrawTextA(text_dc, l.ansi, -1, &rect, DT_CENTER | DT_VCENTER);
