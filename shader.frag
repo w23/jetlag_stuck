@@ -75,7 +75,7 @@ float tr(vec3 O, vec3 D, float l, float L, float steps) {
 }
 
 void main() {
-	vec2 uv=(gl_FragCoord.xy/R)*2.-1.;uv.x*=R.x/R.y;
+	vec2 uv=(gl_FragCoord.xy/vec2(1920.,1080.))*2.-1.;uv.x*=1.8;
 	//gl_FragColor = texture2D(Tex, uv); return;
 
 	vec3 c=vec3(0.);
